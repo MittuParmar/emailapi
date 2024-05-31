@@ -60,7 +60,7 @@ public class EmailHelper {
 
                 mailModel.setTo(row.getCell(0) != null ? row.getCell(0).getStringCellValue() : null);
                 mailModel.setSubject(subject);
-                mailModel.setName(row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "Sir / Ma'am");
+                mailModel.setName(row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "Hiring Team");
                 if(template.contains("{name}")) {
                     mailModel.setText(template.replace("{name}",mailModel.getName()));
                 }else {
