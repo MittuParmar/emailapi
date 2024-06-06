@@ -50,7 +50,7 @@ public class EmailHelper {
         List<MailModel>  mailModelList = new ArrayList<>();
         try {
             XSSFWorkbook workbook = new XSSFWorkbook(excelFile.getInputStream());
-            XSSFSheet sheet1 = workbook.getSheet("Sheet1");
+            XSSFSheet sheet1 = workbook.getSheet("Emails");
             Iterator<Row> iterator = sheet1.iterator();
 
             while(iterator.hasNext()){

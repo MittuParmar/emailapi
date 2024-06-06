@@ -1,6 +1,7 @@
 package com.email.api.emailapi.service;
 
 import com.email.api.emailapi.helper.EmailHelper;
+import com.email.api.emailapi.helper.FileHelper;
 import com.email.api.emailapi.model.MailModel;
 import com.email.api.emailapi.util.EmailUtils;
 import jakarta.mail.MessagingException;
@@ -14,6 +15,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,13 @@ public class EmailService {
     @Autowired
     private EmailHelper emailHelper;
 
+    @Autowired
+    private FileHelper fileHelper;
+
+    private List<String> emailsList;
+
+    private int count;
+
     Logger logger = (Logger) LoggerFactory.getLogger(EmailService.class);
     public void sendEmail( String to, String subject, String message){
 
@@ -36,7 +45,6 @@ public class EmailService {
         simpleMailMessage.setTo(to);
         simpleMailMessage.setSubject(subject);
         simpleMailMessage.setText(message);
-        simpleMailMessage.setFrom("mittuparmar00@gmail.com");
 
         mailSender.send(simpleMailMessage);
         logger.info("Mail send");
@@ -45,7 +53,7 @@ public class EmailService {
 
     public void sendEmail(String to, String subject, String text, MultipartFile attachment){
 
-        logger.info("Mail sending start to : " + to);
+        logger.info(count + " : Mail sending start to : " + to);
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = null;
@@ -62,33 +70,56 @@ public class EmailService {
 
         } catch (MessagingException e) {
             throw new RuntimeException(e);
+        }catch (Exception e){
+            logger.info("Something went wrong with email : " + to);
         }
 
     }
 
-    public Map<String, List<MailModel>> sendBulkEmails(List<MailModel> mailModelList, MultipartFile attachment){
+    public Map<String, List<MailModel>> sendBulkEmails(List<MailModel> mailModelList, MultipartFile attachment) throws IOException {
 
+        count=0;
+        logger.info("Total number of mails : "+ mailModelList.size());
 
         Map<String, List<MailModel>> statusMap = new HashMap();
         statusMap.put("SuccessList", new ArrayList<>());
         statusMap.put("RejectList", new ArrayList<>());
 
+        if (emailsList==null) emailsList = fileHelper.readFile("emails.txt");
+
         mailModelList.forEach(mailModel ->
                 {
-                    if (mailModel.getTo() == null || mailModel.getSubject() == null || mailModel.getText() ==null ||
-                            mailModel.getTo().trim().isEmpty() || mailModel.getSubject().trim().isEmpty() || mailModel.getText().trim().isEmpty()||
-                            !EmailUtils.isValidEmail(mailModel.getTo())) {
+                    count++;
+                    if (mailModel.getText().contains("{name}")){
+                        if(mailModel.getName()==null || mailModel.getName().isEmpty()){
+                            mailModel.setName("Hiring Team");
+                        }
+                        mailModel.setText(mailModel.getText().replace("{name}", mailModel.getName()));
+                    }
+
+                    if(emailsList.contains(mailModel.getTo())){
+                        logger.info("already send : " + mailModel.getTo());
                         statusMap.get("RejectList").add(mailModel);
                     }else {
-                        this.sendEmail(mailModel.getTo(),mailModel.getSubject(),mailModel.getText(),attachment);
-                        statusMap.get("SuccessList").add(mailModel);
+                        if (mailModel.getTo() == null || mailModel.getSubject() == null || mailModel.getText() ==null ||
+                                mailModel.getTo().trim().isEmpty() || mailModel.getSubject().trim().isEmpty() || mailModel.getText().trim().isEmpty()||
+                                !EmailUtils.isValidEmail(mailModel.getTo())
+                        ) {
+                            statusMap.get("RejectList").add(mailModel);
+                            logger.info("Rejected : " + mailModel.getTo());
+                        }else {
+                            this.sendEmail(mailModel.getTo(),mailModel.getSubject(),mailModel.getText(),attachment);
+                            statusMap.get("SuccessList").add(mailModel);
+                            emailsList.add(mailModel.getTo());
+                            fileHelper.addEmail("emails.txt",mailModel.getTo());
+                        }
                     }
                 }
         );
     return statusMap;
     }
 
-    public Map<String, List<MailModel>> sendEmails(MultipartFile excelFile, String subject, String template, MultipartFile attachment) {
+    public Map<String, List<MailModel>> sendEmails(MultipartFile excelFile, String subject, String template, MultipartFile attachment) throws IOException {
         List<MailModel> mailModelList = emailHelper.convertExcelToList( excelFile,  subject,  template, attachment);
         return sendBulkEmails(mailModelList, attachment);
     }

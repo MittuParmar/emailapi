@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Processor</title>
+    <script>
+        async function processEmails() {
+            const emails = document.getElementById("emails").value.split("\n");
+            const response = await fetch('/api/emails/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emails)
+            });
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'emails.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</head>
+<body>
+<h1>Email Processor</h1>
+<textarea id="emails" rows="10" cols="30" placeholder="Enter emails here, one per line"></textarea><br>
+<button onclick="processEmails()">Process Emails</button>
+</body>
+</html>

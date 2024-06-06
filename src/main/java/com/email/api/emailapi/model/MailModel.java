@@ -6,7 +6,17 @@ public class MailModel {
     private String to;
     private String subject;
     private String name;
+    private String text;
 
+    public MailModel() {
+    }
+
+    public MailModel(String to, String subject, String name, String text) {
+        this.to = to;
+        this.subject = subject;
+        this.name = name;
+        this.text = text;
+    }
 
     public String getName() {
         return name;
@@ -15,8 +25,6 @@ public class MailModel {
     public void setName(String name) {
         this.name = name;
     }
-
-    private String text;
 
     public String getTo() {
         return to;

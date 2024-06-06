@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Processor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function processEmails() {
+            const emails = $("#emails").val().split("\n").map(email => email.trim()).filter(email => email !== "");
+            $.ajax({
+                url: '/api/emails/process',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(emails),
+                success: function(data) {
+                    const tableBody = $("#emailTable tbody");
+                    tableBody.empty();
+                    data.forEach(function(emailData) {
+                        const row = `<tr>
+                            <td>${emailData.email}</td>
+                            <td><input type="text" value="${emailData.name}" class="name-input"></td>
+                        </tr>`;
+                        tableBody.append(row);
+                    });
+                    $("#emailSection").show();
+                }
+            });
+        }
+
+        function submitEmails() {
+            const emailNames = [];
+            $("#emailTable tbody tr").each(function() {
+                const email = $(this).find("td:first").text();
+                const name = $(this).find(".name-input").val();
+                emailNames.push({ email: email, name: name });
+            });
+
+            $.ajax({
+                url: '/api/emails/submit',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(emailNames),
+                success: function(response) {
+                    const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'emails.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+<h1>Email Processor</h1>
+<textarea id="emails" rows="10" cols="50" placeholder="Enter emails here, one per line"></textarea><br>
+<button onclick="processEmails()">Process Emails</button>
+
+<div id="emailSection" style="display:none;">
+    <h2>Emails and Names</h2>
+    <table id="emailTable" border="1">
+        <thead>
+        <tr>
+            <th>Email</th>
+            <th>Name</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Rows will be added here by JavaScript -->
+        </tbody>
+    </table>
+    <button onclick="submitEmails()">Submit</button>
+</div>
+</body>
+</html>
