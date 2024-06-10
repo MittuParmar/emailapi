@@ -67,10 +67,12 @@
                 success: function(data) {
                     const tableBody = $("#emailTable tbody");
                     tableBody.empty();
-                    data.forEach(function(emailData) {
+                    data.forEach(function(emailData, index) {
                         const row = `<tr>
-                            <td>${emailData.email}</td>
+                            <td>${index + 1}</td>
+                            <td><input type="text" value="${emailData.email}" class="email-input"></td>
                             <td><input type="text" value="${emailData.name}" class="name-input"></td>
+                            <td><button onclick="deleteRow(${index})">Delete</button></td>
                         </tr>`;
                         tableBody.append(row);
                     });
@@ -79,10 +81,22 @@
             });
         }
 
+        function deleteRow(index) {
+            $("#emailTable tbody tr").eq(index).remove();
+            updateIndices();
+        }
+
+        function updateIndices() {
+            $("#emailTable tbody tr").each(function(index) {
+                $(this).find("td:first").text(index + 1);
+                $(this).find("button").attr("onclick", `deleteRow(${index})`);
+            });
+        }
+
         function submitEmails() {
             const emailNames = [];
             $("#emailTable tbody tr").each(function() {
-                const email = $(this).find("td:first").text();
+                const email = $(this).find(".email-input").val();
                 const name = $(this).find(".name-input").val();
                 emailNames.push({ email: email, name: name });
             });
@@ -117,8 +131,9 @@
             tableBody.empty();
 
             if (successList.length > 0) {
-                successList.forEach(function(item) {
+                successList.forEach(function(item, index) {
                     const row = `<tr class="success">
+                        <td>${index + 1}</td>
                         <td>${item.to}</td>
                         <td>${item.name}</td>
                     </tr>`;
@@ -127,8 +142,9 @@
             }
 
             if (rejectList.length > 0) {
-                rejectList.forEach(function(item) {
+                rejectList.forEach(function(item, index) {
                     const row = `<tr class="reject">
+                        <td>${index + 1}</td>
                         <td>${item.email}</td>
                         <td>Failed</td>
                     </tr>`;
@@ -162,8 +178,10 @@
             <table id="emailTable">
                 <thead>
                 <tr>
+                    <th>#</th>
                     <th>Email</th>
                     <th>Name</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
